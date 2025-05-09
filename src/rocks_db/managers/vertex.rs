@@ -51,7 +51,8 @@ impl<'a> VertexManager<'a> {
         iter.map(|raw_pair| -> Result<Vertex> {
             let (raw_uuid, raw_identifier) = raw_pair?;
             let uuid = Deserializer::deserialize_uuid(&mut util::convert_to_cursor(raw_uuid.as_ref()))?;
-            let identifier = unsafe { Deserializer::deserialize_identifier(&mut util::convert_to_cursor(raw_identifier.as_ref()))? };
+            let identifier = unsafe { Deserializer
+                ::deserialize_identifier(&mut util::convert_to_cursor(raw_identifier.as_ref()))? };
             Ok(Vertex::new_with_id(uuid, identifier))
         })
     }
@@ -63,6 +64,4 @@ impl<'a> VertexManager<'a> {
         // stored in different cf
         batch.put_cf(self.cf.clone(), uuid, identifier);
     }
-
-
 }

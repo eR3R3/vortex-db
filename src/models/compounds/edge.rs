@@ -16,7 +16,7 @@ impl Edge {
         }
     }
 
-    pub fn reverse(&mut self) {
-        std::mem::swap(&mut self.inbound_id, &mut self.outbound_id);
+    pub fn reverse(&self) -> Edge {
+        Edge::new(self.outbound_id, self.inbound_id, self.kind)
     }
 }
