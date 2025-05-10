@@ -1,6 +1,7 @@
 use uuid::Uuid;
 use crate::models::basics::identifier::Identifier;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct Edge {
     pub inbound_id: Uuid,
     pub outbound_id : Uuid,
