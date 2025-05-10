@@ -39,6 +39,12 @@ impl Deserializer {
         cursor.read_exact(&mut buffer)?;
         Ok(Uuid::from_slice(&buffer)?)
     }
+
+    pub fn read_fixed_length_string<T: AsRef<[u8]>>(cursor: &mut Cursor<T>) -> Result<String> {
+        let mut buf = String::new();
+        cursor.read_to_string(&mut buf)?;
+        Ok(buf)
+    }
 }
 
 pub fn convert_to_cursor<T: AsRef<[u8]>>(inner: T) -> Cursor<T> {
