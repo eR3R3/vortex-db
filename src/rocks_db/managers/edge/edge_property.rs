@@ -8,15 +8,12 @@ use crate::util;
 use anyhow::Result;
 use crate::models::basics::json::Json;
 
-pub type EdgePropertyItem = (Edge, Identifier, Json);
+// the key for this cf is | outbound_id(uuid) | edge kind (identifier) | inbound_id(uuid) | property name(identifier) |
+// the value for this cf is | property value(json) |
+// we can use the prefix method to filter and get the property
+// the reason we do not put property name(identifier) into the value is that the key in one lsm tree(cf) should be unique
 
-fn take_with_prefix(iterator: DBIterator, prefix: Vec<u8>) -> impl Iterator<Item = Result<(Box<[u8]>, Box<[u8]>)>> {
-    iterator.take_while(move |item| -> bool {
-        if let Ok((ref k, _)) = *item {
-            k.starts_with(&prefix)
-        } else { true }})
-        .map(|res| res.map_err(Into::into))
-}
+pub type EdgePropertyItem = (Edge, Identifier, Json);
 
 pub(crate) struct EdgePropertyManager<'a> {
     db: &'a DB,
@@ -51,7 +48,7 @@ impl<'a> EdgePropertyManager<'a> {
             .db
             .iterator_cf(&self.cf, IteratorMode::From(&prefix, Direction::Forward));
 
-        let filtered = take_with_prefix(iterator, prefix);
+        let filtered = util::take_with_prefix(iterator, prefix);
 
         Ok(filtered.map(move |item| -> Result<EdgePropertyItem> {
             let (k, v) = item?;
@@ -98,5 +95,10 @@ impl<'a> EdgePropertyManager<'a> {
         }
         batch.delete_cf(&self.cf, self.key(edge, name));
         Ok(())
+    }
+
+    pub fn compact(&self) {
+        self.db
+            .compact_range_cf(&self.cf, Option::<&[u8]>::None, Option::<&[u8]>::None);
     }
 }

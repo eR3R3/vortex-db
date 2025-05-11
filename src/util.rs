@@ -1,10 +1,19 @@
 use std::io::{Cursor, Read};
 use anyhow::Result;
+use rocksdb::DBIterator;
 use uuid::Uuid;
 use crate::models::basics::components::Component;
 use crate::models::basics::identifier;
 use crate::models::basics::identifier::Identifier;
 
+
+pub(crate) fn take_with_prefix(iterator: DBIterator, prefix: Vec<u8>) -> impl Iterator<Item = Result<(Box<[u8]>, Box<[u8]>)>> {
+    iterator.take_while(move |item| -> bool {
+        if let Ok((ref k, _)) = *item {
+            k.starts_with(&prefix)
+        } else { true }})
+        .map(|res| res.map_err(Into::into))
+}
 
 pub fn serialize(components: &[Component]) -> Vec<u8> {
     let len = components.iter().fold(0, |len, component| len + component.byte_len());

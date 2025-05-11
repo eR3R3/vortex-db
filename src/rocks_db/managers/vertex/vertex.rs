@@ -1,14 +1,16 @@
 use std::io::Cursor;
 use std::ops::Deref;
-use std::sync::Arc;
 use rocksdb::{ColumnFamilyRef, Direction, IteratorMode, WriteBatch, DB};
 use uuid::Uuid;
 use crate::models::basics::components::Component;
-use crate::{util};
+use crate::util;
 use anyhow::Result;
 use crate::models::basics::identifier::Identifier;
 use crate::models::compounds::vertex::Vertex;
 use crate::util::Deserializer;
+
+// key: | vertex_id (uuid) |
+// vertex: | vertex kind: Identifier |
 
 pub(crate) struct VertexManager<'a> {
     db: &'a DB,

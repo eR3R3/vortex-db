@@ -4,6 +4,9 @@ use anyhow::Result;
 use crate::models::basics::components::Component;
 use crate::util;
 
+// key: | outbound_id(uuid) | edge kind (identifier) | inbound_id(uuid) |
+// value: it has no value
+
 pub(crate) struct EdgeRangeManager<'a> {
     db: &'a DB,
     cf: ColumnFamilyRef<'a>,
