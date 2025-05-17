@@ -5,10 +5,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub struct Json(pub Arc<serde_json::Value>);
 
 impl Json {
-    /// Constructs a new JSON type.
-    ///
-    /// # Arguments
-    /// * `value`: The JSON value.
     pub fn new(value: serde_json::Value) -> Self {
         Self(Arc::new(value))
     }

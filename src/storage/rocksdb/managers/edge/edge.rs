@@ -3,10 +3,8 @@ use rocksdb::{WriteBatch, DB};
 use anyhow::Result;
 use crate::models::basics::identifier::Identifier;
 use crate::models::compounds::edge::Edge;
-use crate::rocks_db::managers::edge::edge_property::EdgePropertyManager;
-use crate::rocks_db::managers::edge::edge_range::EdgeRangeManager;
-
-
+use crate::storage::rocksdb::managers::edge::edge_property::EdgePropertyManager;
+use crate::storage::rocksdb::managers::edge::edge_range::EdgeRangeManager;
 
 pub struct EdgeManager<'a> {
     db: &'a DB,

@@ -14,3 +14,9 @@ parking_lot = "^0.12.3"
 internment = "0.8.6"
 anyhow = "1.0.97"
 ouroboros = "0.18.5"
+async-channel = "2.3.0"
+num_cpus = "1.16.0"
+
+[features]
+kv-rocksdb = []
+kv-mem = []

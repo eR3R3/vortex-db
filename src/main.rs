@@ -1,9 +1,8 @@
 extern crate core;
-
-mod rocks_db;
 mod util;
 mod models;
-
+mod storage;
+mod config;
 
 fn main() {
     let mut opt = Some(String::from("hello"));
