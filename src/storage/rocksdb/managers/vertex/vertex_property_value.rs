@@ -1,4 +1,4 @@
-use rocksdb::{ColumnFamilyRef, DB};
+use rocksdb::{ColumnFamilyRef, WriteBatch, DB};
 use uuid::Uuid;
 use crate::models::basics::components::Component;
 use crate::models::basics::identifier::Identifier;
@@ -27,5 +27,13 @@ impl<'a> VertexPropertyValueManager<'a> {
             Component::Json(property_value),
             Component::Uuid(vertex_id),
         ])
+    }
+
+    pub(crate) fn set(&self, p0: &mut WriteBatch, p1: Uuid, p2: Identifier, p3: &Json) {
+        todo!()
+    }
+
+    pub(crate) fn delete(&self, p0: &mut WriteBatch, p1: Uuid, p2: Identifier, p3: &Json) {
+        todo!()
     }
 }

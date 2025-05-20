@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use rocksdb::{BlockBasedOptions, Cache, DBCompactionStyle, DBCompressionType, OptimisticTransactionDB, Options, ReadOptions};
+use rocksdb::{BlockBasedOptions, Cache, DBCompactionStyle, DBCompressionType, OptimisticTransactionDB, OptimisticTransactionOptions, Options, ReadOptions, WriteOptions};
 use anyhow::Result;
+use crate::storage::transaction::Check;
 use super::super::super::config;
-
 
 pub struct Datastore {
     db: Arc<OptimisticTransactionDB>,
@@ -21,13 +21,13 @@ impl Datastore {
         // Create column families if missing
         opts.create_missing_column_families(true);
         // Increase the background thread count
-        opts.increase_parallelism(config::ROCKSDB_THREAD_COUNT);
-        opts.set_max_background_jobs(config::ROCKSDB_JOBS_COUNT);
+        opts.increase_parallelism(*config::ROCKSDB_THREAD_COUNT);
+        opts.set_max_background_jobs(*config::ROCKSDB_JOBS_COUNT);
         opts.set_max_open_files(config::ROCKSDB_MAX_OPEN_FILES);
 
         // WAL
-        opts.set_keep_log_file_num(*config::ROCKSDB_KEEP_LOG_FILE_NUM);
-        opts.set_wal_size_limit_mb(*config::ROCKSDB_WAL_SIZE_LIMIT);
+        opts.set_keep_log_file_num(config::ROCKSDB_KEEP_LOG_FILE_NUM);
+        opts.set_wal_size_limit_mb(config::ROCKSDB_WAL_SIZE_LIMIT);
 
         // MEMTABLE
         opts.set_max_write_buffer_number(config::ROCKSDB_MAX_WRITE_BUFFER_NUMBER);
@@ -66,7 +66,7 @@ impl Datastore {
         opts.set_row_cache(&cache);
 
         // MMAP
-        opts.set_allow_mmap_reads(*config::ROCKSDB_ENABLE_MEMORY_MAPPED_READS);
+        opts.set_allow_mmap_reads(config::ROCKSDB_ENABLE_MEMORY_MAPPED_READS);
         opts.set_allow_mmap_writes(false);
 
         // COMPACTION
@@ -108,16 +108,43 @@ impl Datastore {
             db,
         })
     }
+
+    pub(crate) fn transaction(&self, write: bool, _: bool) -> Result<Transaction> {
+        // Set the transaction options
+        let mut to = OptimisticTransactionOptions::default();
+        to.set_snapshot(true);
+        // Set the write options
+        let mut wo = WriteOptions::default();
+        wo.set_sync(config::SYNC_DATA);
+        // Create a new transaction
+        let inner = self.db.transaction_opt(&wo, &to);
+        // The database reference must always outlive
+        // the transaction. If it doesn't then this
+        // is undefined behaviour. This unsafe block
+        // ensures that the transaction reference is
+        // static, but will cause a crash if the
+        // datastore is dropped prematurely.
+        let inner = unsafe {
+            std::mem::transmute::<
+                rocksdb::Transaction<'_, OptimisticTransactionDB>,
+                rocksdb::Transaction<'static, OptimisticTransactionDB>,
+            >(inner)
+        };
+        let mut ro = ReadOptions::default();
+        ro.set_snapshot(&inner.snapshot());
+        ro.set_async_io(true);
+        let check = Check::Error;
+        Ok(Transaction {
+            done: false,
+            write,
+            check,
+            inner: Some(inner),
+            ro,
+            _db: self.db.clone(),
+        })
+    }
 }
 
-/// Used to determine the behaviour when a transaction is not closed correctly
-#[derive(Debug, Default)]
-pub enum Check {
-    #[default]
-    None,
-    Warn,
-    Error,
-}
 
 pub struct Transaction {
     /// Is the transaction complete?

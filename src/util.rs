@@ -1,7 +1,9 @@
 use std::io::{Cursor, Read};
+use std::ops::Range;
 use anyhow::Result;
 use rocksdb::DBIterator;
 use uuid::Uuid;
+use crate::config::Key;
 use crate::models::basics::components::Component;
 use crate::models::basics::identifier;
 use crate::models::basics::identifier::Identifier;
@@ -60,3 +62,27 @@ pub fn convert_to_cursor<T: AsRef<[u8]>>(inner: T) -> Cursor<T> {
     Cursor::new(inner)
 }
 
+#[derive(Debug)]
+pub struct Batch<T> {
+    pub next: Option<Range<Key>>,
+    pub result: Vec<T>,
+}
+
+impl<T> Batch<T> {
+    /// Create a new batch scan result.
+    pub fn new(next: Option<Range<Key>>, result: Vec<T>) -> Self {
+        Self {
+            next,
+            result,
+        }
+    }
+}
+
+pub fn advance_key(key: &mut [u8]) {
+    for b in key.iter_mut().rev() {
+        *b = b.wrapping_add(1);
+        if *b != 0 {
+            break;
+        }
+    }
+}
