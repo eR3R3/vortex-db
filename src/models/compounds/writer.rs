@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::models::compounds::mutations::TableMutations;
+use crate::models::statement::mutations::TableMutations;
 
 #[non_exhaustive]
 pub struct Writer {

@@ -7,14 +7,14 @@ use crate::models::basics::number::Number;
 use crate::models::compounds::id::Id;
 
 
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, Eq, Ord, Default, PartialEq, PartialOrd, Serialize, Deserialize, Hash)]
 #[non_exhaustive]
 pub enum Value {
     #[default]
     Null,
     Bool(bool),
     Number(Number),       // You can define as f64 or a simple enum of i64/f64
-    String(String),       // Use String instead of Strand wrapper
+    Strand(String),       // Use String instead of Strand wrapper
     Datetime(DateTime<Utc>),
     Duration(Duration),
     Uuid(Uuid),

@@ -3,7 +3,7 @@ use std::thread;
 use std::time::Duration;
 use rocksdb::{BlockBasedOptions, Cache, DBCompactionStyle, DBCompressionType, OptimisticTransactionDB, OptimisticTransactionOptions, Options, ReadOptions, WriteOptions};
 use anyhow::Result;
-use crate::storage::transaction::Check;
+use crate::storage::rocksdb::transaction::{Check, Transaction};
 use super::super::super::config;
 
 pub struct Datastore {
@@ -133,33 +133,8 @@ impl Datastore {
         let mut ro = ReadOptions::default();
         ro.set_snapshot(&inner.snapshot());
         ro.set_async_io(true);
-        let check = Check::Error;
-        Ok(Transaction {
-            done: false,
-            write,
-            check,
-            inner: Some(inner),
-            ro,
-            _db: self.db.clone(),
-        })
+        Ok(Transaction::new(false, write, Some(inner), ro, self.db.clone()))
     }
 }
 
 
-pub struct Transaction {
-    /// Is the transaction complete?
-    done: bool,
-    /// Is the transaction writeable?
-    write: bool,
-    /// Should we check unhandled transactions?
-    check: Check,
-    /// The underlying datastore transaction
-    inner: Option<rocksdb::Transaction<'static, OptimisticTransactionDB>>,
-    /// The read options containing the Snapshot
-    ro: ReadOptions,
-    // The above, supposedly 'static transaction
-    // actually points here, so we need to ensure
-    // the memory is kept alive. This pointer must
-    // be declared last, so that it is dropped last.
-    _db: Arc<OptimisticTransactionDB>,
-}

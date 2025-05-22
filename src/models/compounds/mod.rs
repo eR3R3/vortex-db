@@ -1,8 +1,11 @@
 pub mod vertex;
 pub mod edge;
-mod property;
-mod writer;
-mod mutations;
-mod thing;
-mod id;
+pub mod property;
+pub mod writer;
+pub mod thing;
+pub mod id;
 pub mod value;
+pub mod field;
+pub mod table;
+pub mod range;
+pub mod cond;
