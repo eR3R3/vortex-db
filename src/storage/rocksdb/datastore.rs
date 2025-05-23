@@ -118,22 +118,10 @@ impl Datastore {
         wo.set_sync(config::SYNC_DATA);
         // Create a new transaction
         let inner = self.db.transaction_opt(&wo, &to);
-        // The database reference must always outlive
-        // the transaction. If it doesn't then this
-        // is undefined behaviour. This unsafe block
-        // ensures that the transaction reference is
-        // static, but will cause a crash if the
-        // datastore is dropped prematurely.
-        let inner = unsafe {
-            std::mem::transmute::<
-                rocksdb::Transaction<'_, OptimisticTransactionDB>,
-                rocksdb::Transaction<'static, OptimisticTransactionDB>,
-            >(inner)
-        };
         let mut ro = ReadOptions::default();
         ro.set_snapshot(&inner.snapshot());
         ro.set_async_io(true);
-        Ok(Transaction::new(false, write, Some(inner), ro, self.db.clone()))
+        Ok(Transaction::new(write, Some(inner), ro))
     }
 }
 
