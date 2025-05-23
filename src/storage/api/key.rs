@@ -37,7 +37,7 @@ pub trait KeyDecode {
         Self: Sized;
 }
 
-pub trait KeyDecodeOwned: for<'a> KeyDecode<'a> {
+pub trait KeyDecodeOwned: for<'a> KeyDecode {
     /// Decode the key from an owned vector.
     ///
     /// A lot of kv query methods return vectors for keys, which some key types might be able to

@@ -1,6 +1,3 @@
-pub mod vertex;
-pub mod edge;
-pub mod property;
 pub mod writer;
 pub mod thing;
 pub mod id;
@@ -9,3 +6,5 @@ pub mod field;
 pub mod table;
 pub mod range;
 pub mod cond;
+pub mod tuple;
+mod document;

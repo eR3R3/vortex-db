@@ -3,7 +3,7 @@ use std::thread;
 use std::time::Duration;
 use rocksdb::{BlockBasedOptions, Cache, DBCompactionStyle, DBCompressionType, OptimisticTransactionDB, OptimisticTransactionOptions, Options, ReadOptions, WriteOptions};
 use anyhow::Result;
-use crate::storage::rocksdb::transaction::{Check, Transaction};
+use crate::storage::rocksdb::transaction::{Transaction};
 use super::super::super::config;
 
 pub struct Datastore {

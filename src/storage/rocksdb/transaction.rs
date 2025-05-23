@@ -1,6 +1,6 @@
-use std::sync::Arc;
 use rocksdb::{OptimisticTransactionDB, ReadOptions};
 use anyhow::{anyhow, Result};
+use crate::models::compounds::tuple::Tuple;
 
 pub struct Transaction<'db> {
     /// Is the transaction writeable?
@@ -14,7 +14,7 @@ pub struct Transaction<'db> {
 
 impl<'db> Transaction<'db> {
     pub fn new(write: bool,
-               inner: Option<rocksdb::Transaction<'static, OptimisticTransactionDB>>,
+               inner: Option<rocksdb::Transaction<'db, OptimisticTransactionDB>>,
                ro: ReadOptions) -> Self {
         Transaction {
             write,
@@ -22,7 +22,7 @@ impl<'db> Transaction<'db> {
             ro,
         }
     }
-    
+
     pub fn inner_ref(&self) -> Result<&rocksdb::Transaction<OptimisticTransactionDB>> {
         let db_tx = self
             .inner
@@ -54,20 +54,20 @@ impl<'db> Transaction<'db> {
         db_tx.put(key, val)?;
         Ok(())
     }
-    
+
     fn delete(&mut self, key: &[u8]) -> Result<()> {
         let db_tx = self.inner_mut_ref()?;
         db_tx.delete(key)?;
         Ok(())
     }
-    
+
     #[inline]
     fn par_put(&mut self, key: &[u8], val: &[u8]) -> Result<()> {
         let db_tx = self.inner_ref()?;
         db_tx.put(key, val)?;
         Ok(())
     }
-    
+
     #[inline]
     fn par_delete(&mut self, key: &[u8]) -> Result<()> {
         let db_tx = self.inner_ref()?;
@@ -106,17 +106,34 @@ impl<'db> Transaction<'db> {
         upper: &[u8],
     ) -> Box<dyn Iterator<Item = Result<Tuple>> + 'a>
     {
-        match &self.db_tx {
-            Some(db_tx) => Box::new(NewRocksDbIterator {
-                inner: db_tx.iterator(rocksdb::IteratorMode::From(
-                    lower,
-                    rocksdb::Direction::Forward,
-                )),
-                upper_bound: upper.to_vec(),
-            }),
-            None => Box::new(std::iter::once(Err(miette!(
-                "Transaction already committed"
-            )))),
+        let db_tx = self.inner_ref().unwrap();
+
+    }
+}
+
+pub(crate) struct RocksDbIterator<'db, 'a>
+where
+    'db: 'a,
+{
+    inner: rocksdb::DBIteratorWithThreadMode<'a, rocksdb::Transaction<'db, OptimisticTransactionDB>>,
+    upper_bound: Vec<u8>,
+}
+
+impl<'db, 'a> Iterator for RocksDbIterator<'db, 'a> {
+    type Item = Result<Tuple>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(result) = self.inner.next() {
+            match result {
+                Ok((k, v)) => {
+                    if k.as_ref() >= self.upper_bound.as_slice() {
+                        return None;
+                    }
+                    return Some(Ok(decode_tuplem_kv(&k, &v, None)));
+                }
+                Err(e) => return Some(Err(anyhow!("Iterator error: {}", e))),
+            }
         }
+        None
     }
 }
