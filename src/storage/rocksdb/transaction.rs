@@ -1,8 +1,43 @@
+use std::sync::Arc;
 use rocksdb::{OptimisticTransactionDB, ReadOptions};
 use anyhow::{anyhow, Result};
 use crate::models::compounds::tuple::Tuple;
+use crate::models::compounds::value::Value;
+use crate::models::statement::define_database::DefineDatabaseStatement;
+use crate::storage::api::key::KeyEncode;
+use crate::storage::cache;
+use crate::storage::cache::transaction::TransactionCache;
 
 pub struct Transaction<'db> {
+    // cache for the transaction
+    cache: TransactionCache,
+    inner: TransactionRaw<'db>,
+}
+
+impl<'db> Transaction<'db> {
+    pub fn get_db(&self, db: &str) -> Result<Arc<DefineDatabaseStatement>> {
+        let qey = cache::transaction::lookup::Lookup::Db(db);
+        match self.cache.get(&qey) {
+            Some(val) => val.try_into_type(),
+            None => {
+                // the encoded key
+                let key = crate::key::db::new(db).encode()?;
+                let val = self.get(key)?.ok_or_else(anyhow!("db not found"))?;
+                let val: DefineDatabaseStatement = revision::from_slice(&val)?;
+                let val = Arc::new(val);
+                let entry = cache::transaction::Entry::Any(val.clone());
+                self.cache.insert(qey, entry);
+                Ok(val)
+            }
+        }
+    }
+    
+    pub fn get<T: KeyEncode>(&self, key: T) -> Result<Option<Vec<u8>>> {
+        self.inner.get(key)
+    }
+}
+
+pub struct TransactionRaw<'db> {
     /// Is the transaction writeable?
     write: bool,
     /// The underlying datastore transaction
@@ -12,11 +47,11 @@ pub struct Transaction<'db> {
 }
 
 
-impl<'db> Transaction<'db> {
+impl<'db> TransactionRaw<'db> {
     pub fn new(write: bool,
                inner: Option<rocksdb::Transaction<'db, OptimisticTransactionDB>>,
                ro: ReadOptions) -> Self {
-        Transaction {
+        TransactionRaw {
             write,
             inner,
             ro,
@@ -44,7 +79,8 @@ impl<'db> Transaction<'db> {
     }
 
     // get a key from a transaction
-    fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>> {
+    fn get<T: KeyEncode>(&self, raw_key: T) -> Result<Option<Vec<u8>>> {
+        let key = raw_key.encode()?;
         let db_tx = self.inner_ref()?;
         db_tx.get(key).map_err(|e| anyhow!("{}", e))
     }

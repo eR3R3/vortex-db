@@ -7,4 +7,4 @@ pub mod table;
 pub mod range;
 pub mod cond;
 pub mod tuple;
-mod document;
+pub mod document;

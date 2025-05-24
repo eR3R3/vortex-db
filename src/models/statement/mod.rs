@@ -1,4 +1,5 @@
 pub mod define_table;
+pub mod define_database;
 pub mod mutations;
 pub mod permission;
 pub mod operation;

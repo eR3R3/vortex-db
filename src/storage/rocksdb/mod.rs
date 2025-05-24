@@ -1,5 +1,5 @@
 
 mod managers;
 pub mod datastore;
-mod transaction;
+pub mod transaction;
 

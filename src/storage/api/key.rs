@@ -60,6 +60,7 @@ impl KeyEncode for Vec<u8> {
     fn encode_owned(self) -> Result<Vec<u8>> {
         Ok(self)
     }
+    
 
     fn encode_into(&self, buffer: &mut Vec<u8>) -> Result<()> {
         buffer.extend_from_slice(self);
@@ -74,6 +75,20 @@ impl KeyEncode for Vec<u8> {
             // we can't overwrite the buffer so instead copy self into it.
             buffer.extend_from_slice(&self);
         }
+        Ok(())
+    }
+}
+
+impl KeyEncode for &str {
+    fn encode_into(&self, buffer: &mut Vec<u8>) -> Result<()> {
+        buffer.extend_from_slice(self.as_bytes());
+        Ok(())
+    }
+}
+
+impl KeyEncode for &[u8] {
+    fn encode_into(&self, buffer: &mut Vec<u8>) -> Result<()> {
+        buffer.extend_from_slice(self);
         Ok(())
     }
 }

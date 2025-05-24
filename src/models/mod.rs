@@ -1,3 +1,3 @@
 pub mod basics;
 pub mod compounds;
-mod statement;
+pub mod statement;

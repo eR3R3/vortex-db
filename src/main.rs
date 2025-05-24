@@ -5,6 +5,8 @@ mod models;
 mod storage;
 mod config;
 mod context;
+mod query;
+mod key;
 
 fn main() {
     let mut opt = Some(String::from("hello"));
